@@ -7,6 +7,8 @@ ETF 거래용 Creon API 및 코드는 아래 도서 및 GITHUB를 참고하였�
 
 - GIT: https://github.com/INVESTAR/StockAnalysisInPython
 
+![슬라이드1](https://user-images.githubusercontent.com/55021961/139805393-faeaa985-adc2-4dc7-9fa7-342b148ec404.JPG)
+![슬라이드2](https://user-images.githubusercontent.com/55021961/139805401-e04b7524-609a-4615-b21c-d8adfb7f921a.JPG)
 
 # ETF_backtesting_V4
 변동성 돌파 전략을 BackTest합니다.
