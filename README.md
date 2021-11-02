@@ -1,11 +1,13 @@
 # Quant_ETF_VBS
 변동성 돌파 전략을 구현합니다. 단, ETF만 거래합니다.
 
-ETF 거래용 Creon API 및 코드는 아래 도서 및 GITHUB를 참고하였습니다.
+ETF 거래용 Creon API는 아래 도서 및 GITHUB를 참고하였습니다.
 
 - 도서: http://www.yes24.com/Product/Goods/90578506?OzSrank=1
 
 - GIT: https://github.com/INVESTAR/StockAnalysisInPython
+
+아래는 실제 매매 결과입니다.
 
 ![슬라이드1](https://user-images.githubusercontent.com/55021961/139805393-faeaa985-adc2-4dc7-9fa7-342b148ec404.JPG)
 ![슬라이드2](https://user-images.githubusercontent.com/55021961/139805401-e04b7524-609a-4615-b21c-d8adfb7f921a.JPG)
