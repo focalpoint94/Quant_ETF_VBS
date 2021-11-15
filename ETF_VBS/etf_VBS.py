@@ -8,7 +8,7 @@ import requests
 import json
 import sys, ctypes
 import win32com.client
-from datetime import datetime
+from datetime import datetime, timedelta
 import time
 import pandas as pd
 
@@ -43,7 +43,8 @@ def post_message(slack_data):
     특정 채널에 slack message를 보냄
     * 채널은 webhook_url로 선택
     """
-    webhook_url = "********************************"
+    # channel: creonlogs-1-etfvbs
+    webhook_url = "https://hooks.slack.com/services/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"
     response = requests.post(webhook_url, data=json.dumps(slack_data),
                              headers={'Content-Type': 'application/json'})
     if response.status_code != 200:
@@ -263,7 +264,7 @@ def get_moving_average(code, window):
         dbgout('get_moving_avg(' + str(window) + ') -> exception! ' + str(ex))
         return None
 
-def buy_etf(code):
+def buy_etf(code, timeout=180):
     try:
         global bought_list                                              # 함수 내에서 값 변경을 하기 위해 global로 지정
         if code in bought_list:                                         # 매수 완료 종목이면 더 이상 안 사도록 함수 종료
@@ -284,41 +285,45 @@ def buy_etf(code):
             if buy_price_limit >= int(ask_price):
                 printlog(stock_name + '(' + str(code) + ') ' + str(buy_qty) +
                          'EA : ' + str(buy_price_limit) + '>=' + str(ask_price) + 'meets the order condition!`')
-                cpTradeUtil.TradeInit()
-                acc = cpTradeUtil.AccountNumber[0]          # 계좌번호
-                accFlag = cpTradeUtil.GoodsList(acc, 1)     # -1:전체,1:주식,2:선물/옵션
-                cpOrder.SetInputValue(0, "2")               # 2: 매수
-                cpOrder.SetInputValue(1, acc)               # 계좌번호
-                cpOrder.SetInputValue(2, accFlag[0])        # 상품구분 - 주식 상품 중 첫번째
-                cpOrder.SetInputValue(3, code)              # 종목코드
-                cpOrder.SetInputValue(4, buy_qty)           # 매수할 수량
-                cpOrder.SetInputValue(5, ask_price)         # 매수 희망 가격
-                cpOrder.SetInputValue(7, "2")               # 주문조건 0:기본, 1:IOC, 2:FOK
-                cpOrder.SetInputValue(8, "01")              # 주문호가 01:보통, 03:시장가
-                                                            # 05:조건부, 12:최유리, 13:최우선
-                """매수 주문 요청"""
-                ret = cpOrder.BlockRequest()
-                printlog('FOK 매수 ->', stock_name, code, buy_qty, '->', ret)
-                if ret != 0:
-                    printlog('주문 오류.')
-                    return False
-                if ret == 4:
-                    remain_time = cpStatus.LimitRequestRemainTime
-                    printlog('주의: 연속 주문 제한에 걸림. 대기 시간:', remain_time/1000)
-                    time.sleep(remain_time/1000)
-                    return False
-                rqStatus = cpOrder.GetDibStatus()
-                errMsg = cpOrder.GetDibMsg1()
-                if rqStatus != 0:
-                    printlog("주문 실패: ", rqStatus, errMsg)
-                time.sleep(2)
-                printlog('현금주문 가능금액 :', buy_amount)
-                stock_name, bought_qty = get_stock_balance(code)
-                printlog('get_stock_balance :', stock_name, stock_qty)
-                if bought_qty > 0:
-                    bought_list.append(code)
-                    dbgout(" "+ str(stock_name) + ' : ' + str(code) +
-                        " -> " + str(bought_qty) + "EA bought!" + " " + "(Target Price: " + str(target_price) + ")")
+                t_timeout = datetime.now() + timedelta(seconds=timeout)
+                bought_qty = 0
+                while ((buy_qty - bought_qty) != 0) and datetime.now() <= t_timeout:
+                    cpTradeUtil.TradeInit()
+                    acc = cpTradeUtil.AccountNumber[0]          # 계좌번호
+                    accFlag = cpTradeUtil.GoodsList(acc, 1)     # -1:전체,1:주식,2:선물/옵션
+                    cpOrder.SetInputValue(0, "2")               # 2: 매수
+                    cpOrder.SetInputValue(1, acc)               # 계좌번호
+                    cpOrder.SetInputValue(2, accFlag[0])        # 상품구분 - 주식 상품 중 첫번째
+                    cpOrder.SetInputValue(3, code)              # 종목코드
+                    cpOrder.SetInputValue(4, buy_qty - bought_qty)           # 매수할 수량
+                    cpOrder.SetInputValue(5, ask_price)         # 매수 희망 가격
+                    cpOrder.SetInputValue(7, "1")               # 주문조건 0:기본, 1:IOC, 2:FOK
+                    cpOrder.SetInputValue(8, "01")              # 주문호가 01:보통, 03:시장가
+                                                                # 05:조건부, 12:최유리, 13:최우선
+                    """매수 주문 요청"""
+                    ret = cpOrder.BlockRequest()
+                    printlog('FOK 매수 ->', stock_name, code, buy_qty, '->', ret)
+                    if ret != 0:
+                        printlog('주문 오류.')
+                        return False
+                    if ret == 4:
+                        remain_time = cpStatus.LimitRequestRemainTime
+                        printlog('주의: 연속 주문 제한에 걸림. 대기 시간:', remain_time/1000)
+                        time.sleep(remain_time/1000)
+                        return False
+                    rqStatus = cpOrder.GetDibStatus()
+                    errMsg = cpOrder.GetDibMsg1()
+                    if rqStatus != 0:
+                        printlog("주문 실패: ", rqStatus, errMsg)
+                    time.sleep(2)
+                    printlog('현금주문 가능금액 :', buy_amount)
+                    stock_name, bought_qty = get_stock_balance(code)
+                    printlog('get_stock_balance :', stock_name, stock_qty)
+                    if bought_qty > 0:
+                        bought_list.append(code)
+                        dbgout(" "+ str(stock_name) + ' : ' + str(code) +
+                            " -> " + str(bought_qty) + "EA bought!" + " " + "(Target Price: " + str(target_price) + ")")
+
     except Exception as ex:
         dbgout("buy_etf("+ str(code) + ") -> exception! " + str(ex))
 
