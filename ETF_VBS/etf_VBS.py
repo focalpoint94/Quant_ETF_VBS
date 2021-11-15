@@ -44,7 +44,7 @@ def post_message(slack_data):
     * 채널은 webhook_url로 선택
     """
     # channel: creonlogs-1-etfvbs
-    webhook_url = "https://hooks.slack.com/services/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"
+    webhook_url = "*************************************"
     response = requests.post(webhook_url, data=json.dumps(slack_data),
                              headers={'Content-Type': 'application/json'})
     if response.status_code != 200:
